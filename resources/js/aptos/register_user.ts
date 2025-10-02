@@ -64,11 +64,11 @@ const config = new AptosConfig({
 const aptos = new Aptos(config);
 
 // Load service account (admin) from environment
-const SERVICE_PRIVATE_KEY = process.env.APTOS_SERVICE_PRIVATE_KEY;
+const SERVICE_PRIVATE_KEY = process.env.APTOS_SERVICE_SIGNER_PRIVATE_KEY;
 const MODULE_ADDRESS = process.env.APTOS_MODULE_ADDRESS;
 
 if (!SERVICE_PRIVATE_KEY) {
-    logToFile("APTOS_SERVICE_PRIVATE_KEY not found in environment", true);
+    logToFile("APTOS_SERVICE_SIGNER_PRIVATE_KEY not found in environment", true);
     process.exit(1);
 }
 
@@ -89,14 +89,14 @@ logToFile(`Service account loaded: ${serviceAccount.accountAddress.toString()}`)
 async function registerUser(request: RegistrationRequest): Promise<RegistrationResult> {
     try {
         logToFile(`Starting registration for user ${request.user_id}`);
-        logToFile(`Owner address: ${request.owner_address}`);
+        logToFile(`User Aptos address: ${request.owner_address}`);
         logToFile(`Channel: ${request.channel}, Channel User ID: ${request.channel_user_id}`);
 
         // Build the transaction
         const transaction = await aptos.transaction.build.simple({
             sender: serviceAccount.accountAddress,
             data: {
-                function: `${MODULE_ADDRESS}::your_module::register_user`,
+                function: `${MODULE_ADDRESS}::aptsend::register_user`,
                 typeArguments: [],
                 functionArguments: [
                     request.owner_address,                    // user_address
@@ -128,15 +128,10 @@ async function registerUser(request: RegistrationRequest): Promise<RegistrationR
         logToFile(`Transaction confirmed: ${committedTransaction.hash}`);
         logToFile(`Gas used: ${executedTransaction.gas_used}`);
 
-        // Parse the transaction to get the vault address from events
-        // The vault address should be emitted in an event or can be derived
-        // For now, we'll assume it follows a pattern or read from events
-        const vaultAddress = await getVaultAddressFromTransaction(
-            committedTransaction.hash,
-            request.owner_address
-        );
+        // Get the vault address using the view function
+        const vaultAddress = await getVaultAddressFromContract(request.owner_address);
 
-        logToFile(`Vault address created: ${vaultAddress}`);
+        logToFile(`Vault address retrieved: ${vaultAddress}`);
 
         return {
             success: true,
@@ -158,55 +153,31 @@ async function registerUser(request: RegistrationRequest): Promise<RegistrationR
 }
 
 /**
- * Get vault address from transaction events or derive it
- * This depends on your smart contract implementation
+ * Get vault address from the smart contract using view function
  */
-async function getVaultAddressFromTransaction(
-    txHash: string,
-    ownerAddress: string
-): Promise<string> {
+async function getVaultAddressFromContract(ownerAddress: string): Promise<string> {
     try {
-        // Option 1: Read from transaction events
-        const txn = await aptos.getTransactionByHash({ 
-            transactionHash: txHash 
-        });
-
-        // Check if there's a resource created event or similar
-        // This is contract-specific - adjust based on your contract
-        if ('events' in txn && Array.isArray(txn.events)) {
-            for (const event of txn.events) {
-                // Look for VaultCreated event or similar
-                if (event.type.includes('VaultCreated')) {
-                    return event.data.vault_address;
-                }
-            }
-        }
-
-        // Option 2: Derive vault address based on your contract logic
-        // For example, if vaults are resources under the owner's account
-        // You might query: `${ownerAddress}/resource/${MODULE_ADDRESS}::your_module::Vault`
+        logToFile(`Fetching vault address for owner: ${ownerAddress}`);
         
-        // Option 3: Query the contract's view function if available
         const vaultResult = await aptos.view({
             payload: {
-                function: `${MODULE_ADDRESS}::your_module::get_user_vault`,
+                function: `${MODULE_ADDRESS}::aptsend::get_primary_vault_for_owner`,
                 typeArguments: [],
                 functionArguments: [ownerAddress],
             },
         });
 
         if (vaultResult && vaultResult[0]) {
-            return vaultResult[0] as string;
+            const vaultAddress = vaultResult[0] as string;
+            logToFile(`Successfully retrieved vault address: ${vaultAddress}`);
+            return vaultAddress;
         }
 
-        // Fallback: return the owner address (adjust based on your needs)
-        logToFile("Could not find vault address in transaction, using owner address", true);
-        return ownerAddress;
+        throw new Error("View function returned empty result");
 
     } catch (error: any) {
-        logToFile(`Error getting vault address: ${error.message}`, true);
-        // Return owner address as fallback
-        return ownerAddress;
+        logToFile(`Error getting vault address from contract: ${error.message}`, true);
+        throw error;
     }
 }
 

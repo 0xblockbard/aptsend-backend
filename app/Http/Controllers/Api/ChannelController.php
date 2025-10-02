@@ -17,7 +17,10 @@ class ChannelController extends Controller
         $user = User::where('owner_address', $request->owner_address)->first();
 
         if (!$user) {
-            return response()->json(['identities' => []]);
+            return response()->json([
+                'identities' => [],
+                'primary_vault_address' => null
+            ]);
         }
 
         $identities = $user->channelIdentities()
@@ -33,7 +36,10 @@ class ChannelController extends Controller
                 })->values();
             });
 
-        return response()->json(['identities' => $identities]);
+        return response()->json([
+            'identities' => $identities,
+            'primary_vault_address' => $user->primary_vault_address
+        ]);
     }
 
     private function formatIdentifier($identity): string

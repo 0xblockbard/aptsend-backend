@@ -1,14 +1,9 @@
 <?php
 
-// ================================================================
-// app/Services/AptosRegistrationService.php
-// ================================================================
-
 namespace App\Services;
 
 use App\Models\User;
 use App\Models\ChannelIdentity;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Process\Process;
@@ -18,10 +13,6 @@ class AptosRegistrationService
 {
     /**
      * Process user registration on Aptos smart contract
-     *
-     * @param User $user
-     * @param ChannelIdentity $identity
-     * @return array
      */
     public function registerUser(User $user, ChannelIdentity $identity): array
     {
@@ -68,7 +59,7 @@ class AptosRegistrationService
             $processArgs = ['/bin/bash', $scriptPath, $requestJson];
 
             $process = new Process($processArgs);
-            $process->setTimeout(120); // 2 minutes timeout
+            $process->setTimeout(120);
             $process->setWorkingDirectory(base_path());
 
             Log::info("Executing Aptos registration script");
@@ -77,23 +68,31 @@ class AptosRegistrationService
             if (!$process->isSuccessful()) {
                 throw new ProcessFailedException($process);
             }
-
+            
             // Parse the output (expecting JSON)
-            $output = trim($process->getOutput());
-            Log::info('Process output: ' . $output);
+            $output = $process->getOutput();
+            Log::info('Process raw output: ' . $output);
 
-            $result = json_decode($output, true);
+            // Extract only the JSON line (the one that starts with { and ends with })
+            preg_match('/\{[^{}]*"success"[^{}]*\}/', $output, $matches);
+
+            if (empty($matches)) {
+                throw new \Exception('No JSON found in script output');
+            }
+
+            $jsonOutput = $matches[0];
+            Log::info('Extracted JSON: ' . $jsonOutput);
+
+            $result = json_decode($jsonOutput, true);
 
             if (!$result || !isset($result['success'])) {
-                throw new \Exception('Invalid response from Aptos script: ' . $output);
+                throw new \Exception('Invalid JSON from Aptos script');
             }
 
             if ($result['success']) {
                 // Update user with primary vault address
                 $user->update([
                     'primary_vault_address' => $result['vault_address'],
-                    'registration_tx_hash' => $result['tx_hash'],
-                    'registered_at' => now(),
                 ]);
 
                 Log::info("User registration successful", [
@@ -169,7 +168,7 @@ class AptosRegistrationService
     /**
      * Sync user channel identity
      */
-    public function syncUserChannel(ChannelIdentity $identity): array
+    public function syncUser(ChannelIdentity $identity): array
     {
         Log::info("Starting Aptos channel sync", [
             'user_id' => $identity->user_id,
@@ -180,7 +179,7 @@ class AptosRegistrationService
         // Prepare request data
         $requestData = [
             'user_id' => $identity->user_id,
-            'vault_address' => $identity->user->primary_vault_address,
+            'owner_address' => $identity->user->owner_address, 
             'channel' => $identity->channel,
             'channel_user_id' => $identity->channel_user_id,
         ];
@@ -210,12 +209,6 @@ class AptosRegistrationService
             }
 
             if ($result['success']) {
-                // Update identity with sync info
-                $identity->update([
-                    'synced_at' => now(),
-                    'sync_tx_hash' => $result['tx_hash'],
-                ]);
-
                 Log::info("Channel sync successful", [
                     'identity_id' => $identity->id,
                     'tx_hash' => $result['tx_hash'],
@@ -237,4 +230,3 @@ class AptosRegistrationService
         }
     }
 }
-

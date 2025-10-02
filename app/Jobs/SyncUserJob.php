@@ -1,9 +1,5 @@
 <?php 
 
-// ================================================================
-// app/Jobs/SyncUserJob.php
-// ================================================================
-
 namespace App\Jobs;
 
 use App\Models\ChannelIdentity;
@@ -39,7 +35,7 @@ class SyncUserJob implements ShouldQueue
         ]);
 
         try {
-            $result = $service->syncUserChannel($this->identity);
+            $result = $service->syncUser($this->identity);
 
             if (!$result['success']) {
                 Log::error("Sync failed", [

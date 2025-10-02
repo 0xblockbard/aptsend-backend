@@ -25,7 +25,7 @@ fi
 mkdir -p "$PROJECT_ROOT/storage/logs/aptos"
 
 # Log the start of the job execution
-echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] Starting Aptos user registration" >> "$PROJECT_ROOT/storage/logs/aptos/run-register.log"
+echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] Starting AptSend user registration" >> "$PROJECT_ROOT/storage/logs/aptos/run-register.log"
 
 # Run with tsx and timeout
 timeout $TIMEOUT_DURATION "$PROJECT_ROOT/node_modules/.bin/tsx" \
@@ -42,7 +42,7 @@ elif [ $EXIT_CODE -ne 0 ]; then
   echo "Command failed with exit code $EXIT_CODE"
   echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] ERROR: Command failed with exit code $EXIT_CODE" >> "$PROJECT_ROOT/storage/logs/aptos/run-register-error.log"
 else
-  echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] Successfully completed Aptos user registration" >> "$PROJECT_ROOT/storage/logs/aptos/run-register.log"
+  echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] Successfully completed AptSend user registration" >> "$PROJECT_ROOT/storage/logs/aptos/run-register.log"
 fi
 
 # Exit with the exit code

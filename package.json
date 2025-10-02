@@ -8,10 +8,16 @@
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
+        "@types/node": "^24.6.1",
         "axios": "^1.11.0",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^2.0.0",
         "tailwindcss": "^4.0.0",
+        "tsx": "^4.20.6",
         "vite": "^7.0.4"
+    },
+    "dependencies": {
+        "@aptos-labs/ts-sdk": "^5.1.0",
+        "dotenv": "^17.2.3"
     }
 }

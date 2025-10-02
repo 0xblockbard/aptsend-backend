@@ -25,11 +25,11 @@ fi
 mkdir -p "$PROJECT_ROOT/storage/logs/aptos"
 
 # Log the start of the job execution
-echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] Starting Aptos channel sync" >> "$PROJECT_ROOT/storage/logs/aptos/run-sync.log"
+echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] Starting Aptsend User channel sync" >> "$PROJECT_ROOT/storage/logs/aptos/run-sync.log"
 
 # Run with tsx and timeout
 timeout $TIMEOUT_DURATION "$PROJECT_ROOT/node_modules/.bin/tsx" \
-  "$PROJECT_ROOT/resources/js/aptos/sync_user_channel.ts" "$REQUEST_DATA"
+  "$PROJECT_ROOT/resources/js/aptos/sync_user.ts" "$REQUEST_DATA"
 
 # Capture the exit code
 EXIT_CODE=$?
@@ -42,7 +42,7 @@ elif [ $EXIT_CODE -ne 0 ]; then
   echo "Command failed with exit code $EXIT_CODE"
   echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] ERROR: Command failed with exit code $EXIT_CODE" >> "$PROJECT_ROOT/storage/logs/aptos/run-sync-error.log"
 else
-  echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] Successfully completed Aptos channel sync" >> "$PROJECT_ROOT/storage/logs/aptos/run-sync.log"
+  echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] Successfully completed Aptsend User channel sync" >> "$PROJECT_ROOT/storage/logs/aptos/run-sync.log"
 fi
 
 # Exit with the exit code
