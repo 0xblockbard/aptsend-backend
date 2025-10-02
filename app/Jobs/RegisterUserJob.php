@@ -38,6 +38,7 @@ class RegisterUserJob implements ShouldQueue
         ]);
 
         try {
+            // Call the service to register on blockchain
             $result = $service->registerUser($this->user, $this->identity);
 
             if (!$result['success']) {
@@ -50,9 +51,23 @@ class RegisterUserJob implements ShouldQueue
                 return;
             }
 
+            // Refresh models to get the updated data from the service
+            $this->user->refresh();
+            $this->identity->refresh();
+
+            // Update the channel identity with vault status and target address
+            $this->identity->update([
+                'vault_status' => 1, // 1 = linked/active
+                'target_vault_address' => $result['vault_address'],
+            ]);
+
             Log::info("Registration job completed successfully", [
                 'user_id' => $this->user->id,
-                'vault_address' => $result['vault_address'] ?? null,
+                'primary_vault_address' => $this->user->primary_vault_address,
+                'identity_id' => $this->identity->id,
+                'vault_status' => $this->identity->vault_status,
+                'target_vault_address' => $this->identity->target_vault_address,
+                'tx_hash' => $result['tx_hash'],
             ]);
 
         } catch (\Exception $e) {

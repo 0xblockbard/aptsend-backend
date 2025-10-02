@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\TwitterChannelService;
+use App\Jobs\RegisterUserJob;
+use App\Jobs\SyncUserJob;
 use Illuminate\Http\Request;
 
 class TwitterAuthController extends Controller
@@ -68,7 +70,6 @@ class TwitterAuthController extends Controller
         return redirect("{$frontendUrl}/auth/twitter/callback?code={$code}&state={$state}");
     }
 
-
     /**
      * Handle Twitter OAuth callback
      */
@@ -87,7 +88,22 @@ class TwitterAuthController extends Controller
                 $request->code_verifier
             );
 
-            // TODO: Dispatch job here later
+            // Dispatch appropriate job based on user registration status
+            if ($identity->user->primary_vault_address) {
+                // User already has a vault, just sync this new channel
+                \Log::info('Dispatching SyncUserJob for existing user', [
+                    'user_id' => $identity->user_id,
+                    'identity_id' => $identity->id,
+                ]);
+                SyncUserJob::dispatch($identity);
+            } else {
+                // New user, needs full registration
+                \Log::info('Dispatching RegisterUserJob for new user', [
+                    'user_id' => $identity->user_id,
+                    'identity_id' => $identity->id,
+                ]);
+                RegisterUserJob::dispatch($identity->user, $identity);
+            }
 
             return response()->json([
                 'success' => true,

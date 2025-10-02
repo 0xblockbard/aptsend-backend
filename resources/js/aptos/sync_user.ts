@@ -164,7 +164,7 @@ async function main() {
         const request: SyncRequest = JSON.parse(requestJson);
 
         // Validate request
-        if (!request.vault_address || !request.channel || !request.channel_user_id) {
+        if (!request.owner_address || !request.channel || !request.channel_user_id) {
             throw new Error("Missing required fields in request");
         }
 

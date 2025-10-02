@@ -14,6 +14,13 @@ return [
     |
     */
 
+    'twitter' => [
+        'client_id' => env('TWITTER_CLIENT_ID'),
+        'client_secret' => env('TWITTER_CLIENT_SECRET'),
+        'bearer_token' => env('TWITTER_BEARER_TOKEN'),
+        'redirect' => env('TWITTER_REDIRECT_URI'),
+    ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],

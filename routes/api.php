@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\ChannelController;  
+use App\Http\Controllers\Api\CheckerController;  
 use App\Http\Controllers\Api\TwitterAuthController;
 
 Route::get('/user', function (Request $request) {
@@ -18,3 +19,4 @@ Route::prefix('channels/twitter')->group(function () {
 });
 
 Route::get('/channels/identities', [ChannelController::class, 'getAllIdentities']);
+Route::get('/checker/get-identity', [CheckerController::class, 'getIdentity']);

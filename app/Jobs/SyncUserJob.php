@@ -32,9 +32,11 @@ class SyncUserJob implements ShouldQueue
         Log::info("Starting sync for channel identity", [
             'identity_id' => $this->identity->id,
             'channel' => $this->identity->channel,
+            'user_id' => $this->identity->user_id,
         ]);
 
         try {
+            // Call the service to sync on blockchain
             $result = $service->syncUser($this->identity);
 
             if (!$result['success']) {
@@ -47,14 +49,27 @@ class SyncUserJob implements ShouldQueue
                 return;
             }
 
+            // Refresh the identity to ensure we have latest data
+            $this->identity->refresh();
+
+            // Update the channel identity with vault status
+            $this->identity->update([
+                'vault_status' => 1, // 1 = linked/active
+                'target_vault_address' => $this->identity->user->primary_vault_address,
+            ]);
+
             Log::info("Sync job completed successfully", [
                 'identity_id' => $this->identity->id,
+                'vault_status' => $this->identity->vault_status,
+                'target_vault_address' => $this->identity->target_vault_address,
+                'tx_hash' => $result['tx_hash'],
             ]);
 
         } catch (\Exception $e) {
             Log::error("Sync job exception", [
                 'identity_id' => $this->identity->id,
                 'error' => $e->getMessage(),
+                'stack' => $e->getTraceAsString(),
             ]);
 
             $this->fail($e);
