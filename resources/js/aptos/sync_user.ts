@@ -26,18 +26,18 @@ function logToFile(message: string, isError: boolean = false) {
     try {
         fs.appendFileSync(isError ? ERROR_LOG_FILE : LOG_FILE, logMessage);
         
-        if (isError) {
-            console.error(message);
-        } else {
-            console.log(message);
-        }
+        // if (isError) {
+        //     console.error(message);
+        // } else {
+        //     console.log(message);
+        // }
     } catch (error) {
         console.error(`Failed to write to log file: ${error}`);
     }
 }
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ quiet: true });
 
 // Define interfaces
 interface SyncRequest {

@@ -39,7 +39,7 @@ function logToFile(message: string, isError: boolean = false) {
 }
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ quiet: true });
 
 // Define interfaces
 interface RegistrationRequest {

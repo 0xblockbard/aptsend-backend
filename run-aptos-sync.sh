@@ -10,15 +10,16 @@ REQUEST_DATA="$1"
 # Set the timeout duration (in seconds)
 TIMEOUT_DURATION=120  # 2 minutes
 
-echo "Executing Aptos sync script with data: $REQUEST_DATA"
+# Redirect all echo statements to stderr so they don't pollute stdout
+echo "Executing Aptos sync script with data: $REQUEST_DATA" >&2
 
 # Get the absolute path to the project root
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Make sure tsx is installed
 if [ ! -f "$PROJECT_ROOT/node_modules/.bin/tsx" ]; then
-  echo "Installing tsx..."
-  npm install --save-dev tsx
+  echo "Installing tsx..." >&2
+  npm install --save-dev tsx >&2
 fi
 
 # Create log directory if it doesn't exist
@@ -34,12 +35,12 @@ timeout $TIMEOUT_DURATION "$PROJECT_ROOT/node_modules/.bin/tsx" \
 # Capture the exit code
 EXIT_CODE=$?
 
-# Check if the command timed out
+# Check if the command timed out (redirect to stderr)
 if [ $EXIT_CODE -eq 124 ]; then
-  echo "Command timed out after $TIMEOUT_DURATION seconds"
+  echo "Command timed out after $TIMEOUT_DURATION seconds" >&2
   echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] ERROR: Command timed out after $TIMEOUT_DURATION seconds" >> "$PROJECT_ROOT/storage/logs/aptos/run-sync-error.log"
 elif [ $EXIT_CODE -ne 0 ]; then
-  echo "Command failed with exit code $EXIT_CODE"
+  echo "Command failed with exit code $EXIT_CODE" >&2
   echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] ERROR: Command failed with exit code $EXIT_CODE" >> "$PROJECT_ROOT/storage/logs/aptos/run-sync-error.log"
 else
   echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] Successfully completed Aptsend User channel sync" >> "$PROJECT_ROOT/storage/logs/aptos/run-sync.log"

@@ -4,19 +4,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\TwitterChannelService;
+use App\Services\GoogleChannelService;
 use App\Jobs\RegisterUserJob;
 use App\Jobs\SyncUserJob;
 use Illuminate\Http\Request;
 
-class TwitterAuthController extends Controller
+class GoogleAuthController extends Controller
 {
     public function __construct(
-        protected TwitterChannelService $twitterService
+        protected GoogleChannelService $googleService
     ) {}
 
     /**
-     * Generate Twitter OAuth URL
+     * Generate Google OAuth URL
      */
     public function getAuthUrl(Request $request)
     {
@@ -29,7 +29,7 @@ class TwitterAuthController extends Controller
         ]);
 
         try {
-            $data = $this->twitterService->generateAuthUrl(
+            $data = $this->googleService->generateAuthUrl(
                 $request->owner_address,
                 $request->code_challenge
             );
@@ -48,7 +48,7 @@ class TwitterAuthController extends Controller
     }
 
     /**
-     * Handle Twitter OAuth redirect (GET request from Twitter)
+     * Handle Google OAuth redirect (GET request from Google)
      */
     public function handleOAuthRedirect(Request $request)
     {
@@ -59,19 +59,18 @@ class TwitterAuthController extends Controller
         $frontendUrl = config('app.frontend_url', 'http://localhost:5174');
         
         if ($error) {
-            return redirect("{$frontendUrl}/auth/twitter/callback?error={$error}");
+            return redirect("{$frontendUrl}/auth/google/callback?error={$error}");
         }
         
         if (!$code || !$state) {
-            return redirect("{$frontendUrl}/auth/twitter/callback?error=missing_parameters");
+            return redirect("{$frontendUrl}/auth/google/callback?error=missing_parameters");
         }
         
-        // Redirect to frontend callback with code and state
-        return redirect("{$frontendUrl}/auth/twitter/callback?code={$code}&state={$state}");
+        return redirect("{$frontendUrl}/auth/google/callback?code={$code}&state={$state}");
     }
 
     /**
-     * Handle Twitter OAuth callback
+     * Handle Google OAuth callback
      */
     public function handleCallback(Request $request)
     {
@@ -82,22 +81,19 @@ class TwitterAuthController extends Controller
         ]);
 
         try {
-            $identity = $this->twitterService->handleCallback(
+            $identity = $this->googleService->handleCallback(
                 $request->code,
                 $request->state,
                 $request->code_verifier
             );
 
-            // Dispatch appropriate job based on user registration status
             if ($identity->user->primary_vault_address) {
-                // User already has a vault, just sync this new channel
                 \Log::info('Dispatching SyncUserJob for existing user', [
                     'user_id' => $identity->user_id,
                     'identity_id' => $identity->id,
                 ]);
                 SyncUserJob::dispatch($identity);
             } else {
-                // New user, needs full registration
                 \Log::info('Dispatching RegisterUserJob for new user', [
                     'user_id' => $identity->user_id,
                     'identity_id' => $identity->id,
@@ -122,31 +118,4 @@ class TwitterAuthController extends Controller
             ], 400);
         }
     }
-
-    /**
-     * Get user's connected Twitter accounts
-     */
-    // public function getAccounts(Request $request)
-    // {
-    //     $request->validate([
-    //         'owner_address' => 'required|string',
-    //     ]);
-
-    //     $user = User::where('owner_address', $request->owner_address)->first();
-
-    //     if (!$user) {
-    //         return response()->json(['accounts' => []]);
-    //     }
-
-    //     $accounts = $user->channelIdentities()
-    //         ->where('channel', 'twitter')
-    //         ->get()
-    //         ->map(fn($identity) => [
-    //             'id' => $identity->id,
-    //             'identifier' => '@' . ($identity->metadata['username'] ?? 'unknown'),
-    //             'status' => $identity->vault_status === 1 ? 'linked' : 'pending',
-    //         ]);
-
-    //     return response()->json(['accounts' => $accounts]);
-    // }
 }

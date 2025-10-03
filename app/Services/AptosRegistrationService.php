@@ -16,6 +16,7 @@ class AptosRegistrationService
      */
     public function registerUser(User $user, ChannelIdentity $identity): array
     {
+        Log::info("===== Aptos Registration Service - Register User =====");
         Log::info("Starting Aptos user registration", [
             'user_id' => $user->id,
             'owner_address' => $user->owner_address,
@@ -62,13 +63,13 @@ class AptosRegistrationService
             $process->setTimeout(120);
             $process->setWorkingDirectory(base_path());
 
-            Log::info("Executing Aptos registration script");
+            Log::info("Executing Aptos register_user script");
             $process->run();
 
             if (!$process->isSuccessful()) {
                 throw new ProcessFailedException($process);
             }
-            
+
             // Parse the output (expecting JSON)
             $output = $process->getOutput();
             Log::info('Process raw output: ' . $output);
@@ -176,7 +177,6 @@ class AptosRegistrationService
             'channel_user_id' => $identity->channel_user_id,
         ]);
 
-        // Prepare request data
         $requestData = [
             'user_id' => $identity->user_id,
             'owner_address' => $identity->user->owner_address, 
@@ -201,8 +201,21 @@ class AptosRegistrationService
                 throw new ProcessFailedException($process);
             }
 
-            $output = trim($process->getOutput());
-            $result = json_decode($output, true);
+            $output = $process->getOutput();
+            Log::info('Process raw output:', ['output' => $output]);
+
+            // Use same regex extraction as registerUser
+            preg_match('/\{[^{}]*"success"[^{}]*\}/', $output, $matches);
+
+            if (empty($matches)) {
+                Log::error('No JSON found in sync script output', ['output' => $output]);
+                throw new \Exception('No JSON found in script output');
+            }
+
+            $jsonOutput = $matches[0];
+            Log::info('Extracted JSON:', ['json' => $jsonOutput]);
+
+            $result = json_decode($jsonOutput, true);
 
             if (!$result || !isset($result['success'])) {
                 throw new \Exception('Invalid response from Aptos script');
@@ -211,7 +224,7 @@ class AptosRegistrationService
             if ($result['success']) {
                 Log::info("Channel sync successful", [
                     'identity_id' => $identity->id,
-                    'tx_hash' => $result['tx_hash'],
+                    'tx_hash' => $result['tx_hash'] ?? 'unknown',
                 ]);
             }
 
