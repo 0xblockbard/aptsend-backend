@@ -28,11 +28,7 @@ class ChannelController extends Controller
             ->groupBy('channel')
             ->map(function ($channelGroup) {
                 return $channelGroup->map(function ($identity) {
-                    return [
-                        'id' => $identity->id,
-                        'identifier' => $this->formatIdentifier($identity),
-                        'status' => $identity->vault_status === 1 ? 'linked' : 'pending',
-                    ];
+                    return $this->formatIdentity($identity);
                 })->values();
             });
 
@@ -40,6 +36,26 @@ class ChannelController extends Controller
             'identities' => $identities,
             'primary_vault_address' => $user->primary_vault_address
         ]);
+    }
+
+    private function formatIdentity($identity): array
+    {
+        $base = [
+            'id' => $identity->id,
+            'identifier' => $this->formatIdentifier($identity),
+            'status' => $identity->vault_status === 1 ? 'linked' : 'pending',
+        ];
+
+        // Add metadata for channels that need it
+        if ($identity->channel === 'evm') {
+            $base['metadata'] = [
+                'address' => $identity->metadata['address'] ?? $identity->channel_user_id,
+                'chain_id' => $identity->metadata['chain_id'] ?? null,
+                'chain_name' => $identity->metadata['chain_name'] ?? null,
+            ];
+        }
+
+        return $base;
     }
 
     private function formatIdentifier($identity): string

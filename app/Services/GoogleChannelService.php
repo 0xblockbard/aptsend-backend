@@ -138,6 +138,15 @@ class GoogleChannelService implements ChannelInterface
         
         \Log::info('User found/created:', ['user_id' => $user->id]);
 
+        // Check if identity is already linked to another user/wallet
+        $existingIdentity = ChannelIdentity::where('channel', 'google')
+            ->where('channel_user_id', $googleUser['email'])
+            ->first();
+
+        if ($existingIdentity && $existingIdentity->user_id !== $user->id) {
+            throw new \Exception('This email is already linked to another wallet');
+        }
+
         $identity = ChannelIdentity::updateOrCreate(
             [
                 'user_id' => $user->id,

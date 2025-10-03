@@ -146,6 +146,15 @@ class TwitterChannelService implements ChannelInterface
         
         \Log::info('User found/created:', ['user_id' => $user->id]);
 
+        // Check if identity is already linked to another user/wallet
+        $existingIdentity = ChannelIdentity::where('channel', 'twitter')
+            ->where('channel_user_id', $twitterUser['id'])
+            ->first();
+
+        if ($existingIdentity && $existingIdentity->user_id !== $user->id) {
+            throw new \Exception('This Twitter account is already linked to another wallet');
+        }
+
         // Create or update channel identity
         $identity = ChannelIdentity::updateOrCreate(
             [

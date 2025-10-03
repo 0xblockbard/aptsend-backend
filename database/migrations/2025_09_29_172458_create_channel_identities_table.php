@@ -28,6 +28,7 @@ return new class extends Migration
             $table->tinyInteger('vault_status')->default(0);   // 0=temp, 1=linked
             $table->timestamp('claimed_at')->nullable();       // When user claimed this identity
             $table->timestamps();
+            $table->softDeletes();
             
             $table->unique(['channel', 'channel_user_id']);
             $table->index('target_vault_address');

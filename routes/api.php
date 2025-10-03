@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\ChannelController;  
 use App\Http\Controllers\Api\CheckerController;  
+use App\Http\Controllers\Api\EVMAuthController;
 use App\Http\Controllers\Api\TwitterAuthController;
 use App\Http\Controllers\Api\GoogleAuthController;
 
@@ -22,6 +23,10 @@ Route::prefix('channels/google')->group(function () {
     Route::post('/auth-url', [GoogleAuthController::class, 'getAuthUrl']);
     Route::post('/callback', [GoogleAuthController::class, 'handleCallback']);
     Route::get('/callback', [GoogleAuthController::class, 'handleOAuthRedirect']);
+});
+
+Route::prefix('channels/evm')->group(function () {
+    Route::post('/link-wallet', [EVMAuthController::class, 'linkWallet']);
 });
 
 Route::get('/channels/identities', [ChannelController::class, 'getAllIdentities']);
