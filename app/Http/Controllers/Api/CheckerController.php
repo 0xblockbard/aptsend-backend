@@ -3,16 +3,18 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+// use App\Models\ChannelIdentity;
 
 class CheckerController extends Controller
 {
     public function getIdentity(Request $request)
     {
         $request->validate([
-            'channel' => 'required|in:twitter,telegram,google,discord,evm',
+            'channel' => 'required|in:twitter,telegram,google,discord,evm,sol',
             'identifier' => 'required|string|max:255',
         ]);
 
@@ -56,7 +58,9 @@ class CheckerController extends Controller
             case 'discord':
                 return $this->resolveDiscord($identifier);
             case 'evm':
-                return strtolower(trim($identifier));
+                return $this->resolveEvm(strtolower(trim($identifier)));
+            case 'sol':
+                return $this->resolveSol($identifier);
             default:
                 throw new \Exception("Unsupported channel: {$channel}");
         }
@@ -116,5 +120,35 @@ class CheckerController extends Controller
             return $identifier;
         }
         throw new \Exception("Discord username resolution not yet implemented");
+    }
+
+    private function resolveEvm(string $identifier): string
+    {
+
+         \Log::info('Resolving EVM handle', [
+            'identifier' => $identifier
+        ]);
+        
+        $cacheKey = "evm_user_id:{$identifier}";
+
+        return Cache::remember($cacheKey, 3600, function () use ($identifier) {
+            
+            return $identifier;
+        });
+    }
+
+    private function resolveSol(string $identifier): string
+    {
+
+         \Log::info('Resolving SOL handle', [
+            'identifier' => $identifier
+        ]);
+        
+        $cacheKey = "sol_user_id:{$identifier}";
+
+        return Cache::remember($cacheKey, 3600, function () use ($identifier) {
+            
+            return $identifier;
+        });
     }
 }
