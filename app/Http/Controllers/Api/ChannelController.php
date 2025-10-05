@@ -53,6 +53,13 @@ class ChannelController extends Controller
                 'chain_id' => $identity->metadata['chain_id'] ?? null,
                 'chain_name' => $identity->metadata['chain_name'] ?? null,
             ];
+        };
+
+        if ($identity->channel === 'sol') {
+            $base['metadata'] = [
+                'address' => $identity->metadata['address'] ?? $identity->channel_user_id,
+                'sns_name' => $identity->metadata['sns_name'] ?? null,
+            ];
         }
 
         return $base;
@@ -66,6 +73,7 @@ class ChannelController extends Controller
             'discord' => $identity->metadata['username'] ?? 'unknown',
             'email' => $identity->metadata['email'] ?? 'unknown',
             'evm' => substr($identity->channel_user_id, 0, 6) . '...' . substr($identity->channel_user_id, -4),
+            'sol' => substr($identity->channel_user_id, 0, 4) . '...' . substr($identity->channel_user_id, -4),
             default => $identity->channel_user_id,
         };
     }

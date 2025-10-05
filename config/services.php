@@ -21,6 +21,11 @@ return [
         'redirect' => env('TWITTER_REDIRECT_URI'),
     ],
 
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'bot_username' => env('TELEGRAM_BOT_USERNAME', 'aptsend_bot')
+    ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],

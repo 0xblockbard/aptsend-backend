@@ -12,7 +12,7 @@ class CheckerController extends Controller
     public function getIdentity(Request $request)
     {
         $request->validate([
-            'channel' => 'required|in:twitter,telegram,email,discord',
+            'channel' => 'required|in:twitter,telegram,google,discord,evm',
             'identifier' => 'required|string|max:255',
         ]);
 
@@ -51,10 +51,12 @@ class CheckerController extends Controller
                 return $this->resolveTwitter($identifier);
             case 'telegram':
                 return $this->resolveTelegram($identifier);
-            case 'email':
+            case 'google':
                 return strtolower(trim($identifier));
             case 'discord':
                 return $this->resolveDiscord($identifier);
+            case 'evm':
+                return strtolower(trim($identifier));
             default:
                 throw new \Exception("Unsupported channel: {$channel}");
         }

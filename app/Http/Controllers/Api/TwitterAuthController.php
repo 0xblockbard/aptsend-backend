@@ -122,31 +122,4 @@ class TwitterAuthController extends Controller
             ], 400);
         }
     }
-
-    /**
-     * Get user's connected Twitter accounts
-     */
-    // public function getAccounts(Request $request)
-    // {
-    //     $request->validate([
-    //         'owner_address' => 'required|string',
-    //     ]);
-
-    //     $user = User::where('owner_address', $request->owner_address)->first();
-
-    //     if (!$user) {
-    //         return response()->json(['accounts' => []]);
-    //     }
-
-    //     $accounts = $user->channelIdentities()
-    //         ->where('channel', 'twitter')
-    //         ->get()
-    //         ->map(fn($identity) => [
-    //             'id' => $identity->id,
-    //             'identifier' => '@' . ($identity->metadata['username'] ?? 'unknown'),
-    //             'status' => $identity->vault_status === 1 ? 'linked' : 'pending',
-    //         ]);
-
-    //     return response()->json(['accounts' => $accounts]);
-    // }
 }
