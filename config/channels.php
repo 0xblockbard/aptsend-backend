@@ -5,6 +5,7 @@ return [
         'enabled' => env('TWITTER_ENABLED', true),
         'client_id' => env('TWITTER_CLIENT_ID'),
         'client_secret' => env('TWITTER_CLIENT_SECRET'),
+        'bearer_token' => env('TWITTER_BEARER_TOKEN'),
         'redirect_uri' => env('TWITTER_REDIRECT_URI'),
         'scopes' => [
             'tweet.read',
@@ -27,6 +28,21 @@ return [
             'openid',
             'email',
             'profile',
+        ],
+    ],
+
+    'discord' => [
+        'enabled' => env('DISCORD_ENABLED', true),
+        'client_id' => env('DISCORD_CLIENT_ID'),
+        'client_secret' => env('DISCORD_CLIENT_SECRET'),
+        'redirect_uri' => env('DISCORD_REDIRECT_URI'),
+        'auth_url' => 'https://discord.com/api/oauth2/authorize',
+        'token_url' => 'https://discord.com/api/oauth2/token',
+        'api_base_url' => 'https://discord.com/api/v10',
+        'scopes' => [
+            'identify',
+            // 'email', // Add if you need email
+            // 'guilds', // Add if you need server list
         ],
     ],
 

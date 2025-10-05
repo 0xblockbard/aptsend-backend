@@ -74,7 +74,7 @@ class CheckerController extends Controller
         $cacheKey = "twitter_user_id:{$handle}";
 
         return Cache::remember($cacheKey, 3600, function () use ($handle) {
-            $bearerToken = config('services.twitter.bearer_token');
+            $bearerToken = config('channels.twitter.bearer_token');
             
             $url = "https://api.twitter.com/2/users/by/username/{$handle}";
             
