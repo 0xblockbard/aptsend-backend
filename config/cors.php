@@ -5,9 +5,12 @@ return [
     'allowed_methods' => ['*'],
     'allowed_origins' => env('APP_ENV') === 'production' 
         ? [
-            'https://aptsend.com', // Only production domain
+            // Only production domains
+            'https://aptsend.com', 
+            'https://www.aptsend.com',
         ]
         : [
+            // Only development domains
             'http://localhost:5174',
             'https://aptsend-backend.test',
             'https://rica-exciting-ghz-heath.trycloudflare.com'
