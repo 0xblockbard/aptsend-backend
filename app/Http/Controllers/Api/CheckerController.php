@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
-// use App\Models\ChannelIdentity;
+use App\Models\ChannelIdentity;
 
 class CheckerController extends Controller
 {
@@ -108,23 +108,61 @@ class CheckerController extends Controller
 
     private function resolveTelegram(string $identifier): string
     {
-        if (is_numeric($identifier)) {
-            return $identifier;
-        }
-        throw new \Exception("Telegram username resolution not yet implemented");
+        // Remove @ if present
+        $username = ltrim($identifier, '@');
+        
+        \Log::info('Resolving Telegram username from database', [
+            'original' => $identifier,
+            'cleaned' => $username
+        ]);
+        
+        $cacheKey = "telegram_user_id:{$username}";
+
+        return Cache::remember($cacheKey, 3600, function () use ($username) {
+            $lowercaseUsername = strtolower($username);
+            
+            // Search by unique username only
+            $identity = ChannelIdentity::byChannel('telegram')
+                ->whereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.username"))) = ?', [$lowercaseUsername])
+                ->first();
+            
+            if (!$identity) {
+                throw new \Exception("Telegram username '{$username}' not found. User must register their Telegram account first.");
+            }
+            
+            return $identity->channel_user_id;
+        });
     }
 
     private function resolveDiscord(string $identifier): string
     {
-        if (is_numeric($identifier)) {
-            return $identifier;
-        }
-        throw new \Exception("Discord username resolution not yet implemented");
+        $username = ltrim($identifier, '@');
+        
+        \Log::info('Resolving Discord username from database', [
+            'original' => $identifier,
+            'cleaned' => $username
+        ]);
+        
+        $cacheKey = "discord_user_id:{$username}";
+
+        return Cache::remember($cacheKey, 3600, function () use ($username) {
+            $lowercaseUsername = strtolower($username);
+            
+            // Search by unique username only
+            $identity = ChannelIdentity::byChannel('discord')
+                ->whereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(metadata, "$.username"))) = ?', [$lowercaseUsername])
+                ->first();
+            
+            if (!$identity) {
+                throw new \Exception("Discord username '{$username}' not found. User must register their Discord account first.");
+            }
+            
+            return $identity->channel_user_id;
+        });
     }
 
     private function resolveEvm(string $identifier): string
     {
-
          \Log::info('Resolving EVM handle', [
             'identifier' => $identifier
         ]);
@@ -139,7 +177,6 @@ class CheckerController extends Controller
 
     private function resolveSol(string $identifier): string
     {
-
          \Log::info('Resolving SOL handle', [
             'identifier' => $identifier
         ]);
