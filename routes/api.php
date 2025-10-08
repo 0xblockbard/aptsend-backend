@@ -50,3 +50,4 @@ Route::prefix('channels/sol')->group(function () {
 
 Route::get('/channels/identities', [ChannelController::class, 'getAllIdentities']);
 Route::get('/checker/get-identity', [CheckerController::class, 'getIdentity']);
+

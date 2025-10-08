@@ -1,5 +1,3 @@
-// resources/js/aptos/register_user.ts
-
 import { 
     Aptos, 
     AptosConfig, 
