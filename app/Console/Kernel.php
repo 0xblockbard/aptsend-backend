@@ -50,7 +50,7 @@ class Kernel extends ConsoleKernel
                 \Log::info("ProcessTransferJob dispatched at " . now() . " ({$count} pending)");
                 ProcessTransferJob::dispatch();
             }
-        })->everyThirtySeconds();
+        })->everyMinute();
 
         // Scrape tweets every 2 minutes
         $schedule->call(function () {
