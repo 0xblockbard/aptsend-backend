@@ -229,41 +229,62 @@ class TweetScraperService
      */
     protected function parseTweetCommand(string $text): ?array
     {
-        // Expected format: #aptsend [amount] [token] [identifier] [channel]
-        // Channel is REQUIRED
-        // Examples:
-        // #aptsend 1.23 APT @usernameOne twitter
-        // #aptsend 1.23 APT username@gmail.com google
-        // #aptsend 1.23 APT 0x123456789 evm
-        // #aptsend 1.23 APT abc123456789 sol
-
+        // Expected formats:
+        // #aptsend [amount] [token] [identifier] [channel] (explicit channel)
+        // #aptsend [amount] [token] [identifier] (infer channel from identifier)
+        
         $text = trim($text);
         
-        // Pattern requires channel to be specified
-        $pattern = '/^#aptsend\s+(\d+\.?\d*)\s+(\w+)\s+(\S+)\s+(\w+)/i';
+        // Try pattern WITH explicit channel first
+        $patternWithChannel = '/^#aptsend\s+(\d+\.?\d*)\s+(\w+)\s+(\S+)\s+(\w+)/i';
         
-        if (!preg_match($pattern, $text, $matches)) {
-            Log::warning("Tweet command doesn't match required format: {$text}");
-            return null;
+        if (preg_match($patternWithChannel, $text, $matches)) {
+            $amount = floatval($matches[1]);
+            $token = strtoupper($matches[2]);
+            $identifier = $matches[3];
+            $channel = strtolower($matches[4]);
+
+            // Validate that identifier format matches the specified channel
+            if (!$this->validateIdentifierForChannel($identifier, $channel)) {
+                Log::warning("Identifier '{$identifier}' doesn't match channel '{$channel}' format");
+                return null;
+            }
+
+            return [
+                'amount' => $amount,
+                'token' => $token,
+                'recipient_identifier' => $identifier,
+                'recipient_channel' => $channel
+            ];
         }
+        
+        // Try pattern WITHOUT explicit channel (default to twitter)
+        $patternWithoutChannel = '/^#aptsend\s+(\d+\.?\d*)\s+(\w+)\s+(\S+)/i';
+        
+        if (preg_match($patternWithoutChannel, $text, $matches)) {
+            $amount = floatval($matches[1]);
+            $token = strtoupper($matches[2]);
+            $identifier = $matches[3];
+            
+            // Default to twitter since this is a tweet
+            $channel = 'twitter';
+            
+            // Validate identifier is valid for twitter
+            if (!$this->validateIdentifierForChannel($identifier, $channel)) {
+                Log::warning("Identifier '{$identifier}' is not valid for Twitter (must start with @)");
+                return null;
+            }
 
-        $amount = floatval($matches[1]);
-        $token = strtoupper($matches[2]);
-        $identifier = $matches[3];
-        $channel = strtolower($matches[4]);
-
-        // Validate that identifier format matches the specified channel
-        if (!$this->validateIdentifierForChannel($identifier, $channel)) {
-            Log::warning("Identifier '{$identifier}' doesn't match channel '{$channel}' format");
-            return null;
+            return [
+                'amount' => $amount,
+                'token' => $token,
+                'recipient_identifier' => $identifier,
+                'recipient_channel' => $channel
+            ];
         }
-
-        return [
-            'amount' => $amount,
-            'token' => $token,
-            'recipient_identifier' => $identifier,
-            'recipient_channel' => $channel
-        ];
+        
+        Log::warning("Tweet command doesn't match required format: {$text}");
+        return null;
     }
 
     /**
@@ -289,7 +310,7 @@ class TweetScraperService
                 return preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $identifier);
                 
             default:
-                // Reject unsupported channels (discord, telegram, etc.)
+                // Reject unsupported channels
                 return false;
         }
     }
